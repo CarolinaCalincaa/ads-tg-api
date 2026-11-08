@@ -1,6 +1,6 @@
-# ARCHITECTURE.md — Back-end API Central (`apps/api`)
+# ARCHITECTURE.md — Back-end API Central (`ads-tg-api`)
 
-> **Arquivo Vivo de Arquitetura**: Mantido e atualizado a cada tarefa concluída no repositório `tcc-api`.
+> **Arquivo Vivo de Arquitetura**: Mantido e atualizado a cada tarefa concluída no repositório `ads-tg-api`.
 
 ---
 
