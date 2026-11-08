@@ -1,4 +1,4 @@
-# TCC API — Sistema Integrado de Gestão de Produtividade Pessoal
+# ads-tg-api — Sistema Integrado de Gestão de Produtividade Pessoal
 
 API Central construída com **NestJS 11**, **Prisma ORM 6** e **PostgreSQL 16** (FATEC Campinas — 2026).
 

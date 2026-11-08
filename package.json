@@ -1,5 +1,5 @@
 {
-  "name": "tcc-api",
+  "name": "ads-tg-api",
   "version": "1.0.0",
   "description": "API Central NestJS 11 + Prisma ORM + PostgreSQL 16 — Sistema Integrado de Gestão de Produtividade Pessoal (TCC FATEC Campinas 2026)",
   "author": "Carolina Calinca",
