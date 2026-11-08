@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IndicadorDependencia, StatusTarefa, TipoItemAgenda } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CapacidadeService } from '../tarefas/capacidade.service';
+import { FadigaMentalService } from './fadiga-mental.service';
 import { TarefasService } from '../tarefas/tarefas.service';
 import { PainelService } from './painel.service';
 
 describe('PainelService', () => {
   let service: PainelService;
   let prisma: any;
-  let capacidadeService: any;
+  let fadigaMentalService: any;
   let tarefasService: any;
 
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe('PainelService', () => {
       registroExecucaoHabito: { count: jest.fn() },
     };
 
-    capacidadeService = {
+    fadigaMentalService = {
       calcularCapacidadeDia: jest.fn(),
     };
 
@@ -31,7 +31,7 @@ describe('PainelService', () => {
       providers: [
         PainelService,
         { provide: PrismaService, useValue: prisma },
-        { provide: CapacidadeService, useValue: capacidadeService },
+        { provide: FadigaMentalService, useValue: fadigaMentalService },
         { provide: TarefasService, useValue: tarefasService },
       ],
     }).compile();
@@ -53,7 +53,7 @@ describe('PainelService', () => {
       },
     ]);
 
-    capacidadeService.calcularCapacidadeDia.mockResolvedValue({
+    fadigaMentalService.calcularCapacidadeDia.mockResolvedValue({
       horasSonoDiarias: 8,
       minutosUteis: 960,
       limiteFadigaMinutos: 768,
@@ -110,7 +110,7 @@ describe('PainelService', () => {
   });
 
   it('deve sugerir dias livres ordenando por menor ocupação e menor distância (RN02)', async () => {
-    capacidadeService.calcularCapacidadeDia.mockImplementation((_: string, dataStr: string) => {
+    fadigaMentalService.calcularCapacidadeDia.mockImplementation((_: string, dataStr: string) => {
       const day = parseInt(dataStr.slice(-2), 10);
       return Promise.resolve({
         minutosComprometidos: day % 2 === 0 ? 200 : 700,

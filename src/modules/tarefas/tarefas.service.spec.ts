@@ -1,7 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { IndicadorDependencia, NivelPrioridade, StatusTarefa, TipoItemAgenda } from '@prisma/client';
-import { DomainException } from '../../common/exceptions/domain.exception';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CapacidadeService } from './capacidade.service';
 import { TarefasService } from './tarefas.service';
@@ -178,5 +177,38 @@ describe('TarefasService', () => {
     });
 
     expect(result.tarefa.indicadorDependencia).toBe(IndicadorDependencia.EM_ESPERA);
+  });
+
+  it('deve BLOQUEAR reagendamento (update) com HTTP 422 quando o novo dia agendado estiver em risco de fadiga (> 80%)', async () => {
+    prisma.tarefa.findFirst.mockResolvedValue({
+      id: 'uuid-tarefa-1',
+      idUsuario: 'user-1',
+      idPilar: 5,
+      indicadorDependencia: IndicadorDependencia.MINHAS_ACOES,
+      dataAgendamento: new Date('2026-10-15'),
+      deletedAt: null,
+    });
+
+    capacidadeService.calcularCapacidadeDia.mockResolvedValue({
+      minutosComprometidos: 790,
+      minutosUteis: 960,
+      limiteFadigaMinutos: 768,
+      percentualOcupacao: 82,
+      emAlertaFadiga: true,
+      novosAgendamentosBloqueados: true,
+      nivel: 'RISCO_FADIGA',
+    });
+
+    await expect(
+      service.update('user-1', 'uuid-tarefa-1', {
+        dataAgendamento: '2026-10-16',
+      }),
+    ).rejects.toMatchObject({
+      status: HttpStatus.UNPROCESSABLE_ENTITY,
+      response: expect.objectContaining({
+        errorCode: 'MENTAL_FATIGUE_LIMIT_EXCEEDED',
+        message: 'Limite de horas atingido, reagende a atividade.',
+      }),
+    });
   });
 });

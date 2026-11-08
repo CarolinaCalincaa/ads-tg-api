@@ -7,6 +7,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ChecklistsModule } from './modules/checklists/checklists.module';
 import { HealthModule } from './modules/health/health.module';
 import { PainelModule } from './modules/painel/painel.module';
+import { PomodoroModule } from './modules/pomodoro/pomodoro.module';
 import { ProjetosModule } from './modules/projetos/projetos.module';
 import { TarefasModule } from './modules/tarefas/tarefas.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
@@ -31,6 +32,7 @@ import { PrismaModule } from './prisma/prisma.module';
     TarefasModule,
     ChecklistsModule,
     PainelModule,
+    PomodoroModule,
   ],
   providers: [
     {

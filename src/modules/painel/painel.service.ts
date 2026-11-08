@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { IndicadorDependencia, StatusTarefa } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CapacidadeService } from '../tarefas/capacidade.service';
+import { FadigaMentalService } from './fadiga-mental.service';
 import { TarefasService } from '../tarefas/tarefas.service';
 
 @Injectable()
 export class PainelService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly capacidadeService: CapacidadeService,
+    private readonly fadigaMentalService: FadigaMentalService,
     private readonly tarefasService: TarefasService,
   ) {}
 
@@ -38,7 +38,7 @@ export class PainelService {
     }));
 
     // 2. Capacidade e Fadiga Mental do Dia (RN02)
-    const capacidadeDia = await this.capacidadeService.calcularCapacidadeDia(
+    const capacidadeDia = await this.fadigaMentalService.calcularCapacidadeDia(
       idUsuario,
       data,
     );
@@ -247,7 +247,7 @@ export class PainelService {
       currentDay.setUTCDate(monday.getUTCDate() + i);
       const dayStr = currentDay.toISOString().slice(0, 10);
 
-      const capacidade = await this.capacidadeService.calcularCapacidadeDia(
+      const capacidade = await this.fadigaMentalService.calcularCapacidadeDia(
         idUsuario,
         dayStr,
       );
@@ -330,7 +330,7 @@ export class PainelService {
       proximoDia.setUTCDate(dataOrigem.getUTCDate() + offset);
       const dayStr = proximoDia.toISOString().slice(0, 10);
 
-      const capacidade = await this.capacidadeService.calcularCapacidadeDia(
+      const capacidade = await this.fadigaMentalService.calcularCapacidadeDia(
         idUsuario,
         dayStr,
       );
