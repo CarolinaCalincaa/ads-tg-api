@@ -82,6 +82,43 @@ export class OAuthService {
       );
     }
 
+    // 1. Suporte a Access Token OAuth2 (quando emitido pelo GIS TokenClient na Web)
+    const isJwt = idToken.split('.').length === 3;
+    if (!isJwt) {
+      try {
+        const response = await fetch(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: { Authorization: `Bearer ${idToken}` },
+          },
+        );
+
+        if (response.ok) {
+          const data = (await response.json()) as {
+            sub?: string;
+            email?: string;
+            name?: string;
+            picture?: string;
+          };
+
+          if (data.sub && data.email) {
+            return {
+              sub: data.sub,
+              email: data.email.trim().toLowerCase(),
+              name:
+                data.name?.trim() ||
+                fallbackName ||
+                data.email.split('@')[0] ||
+                'Usuário Google',
+              provider: ProvedorOAuth.GOOGLE,
+            };
+          }
+        }
+      } catch {
+        // Caso falhe, tenta o fluxo com verifyIdToken abaixo
+      }
+    }
+
     try {
       const googleClientId = this.configService.get<string>('GOOGLE_CLIENT_ID');
       const ticket = await this.googleClient.verifyIdToken({
