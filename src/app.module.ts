@@ -4,7 +4,11 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from './modules/auth/auth.module';
+import { ChecklistsModule } from './modules/checklists/checklists.module';
 import { HealthModule } from './modules/health/health.module';
+import { PainelModule } from './modules/painel/painel.module';
+import { ProjetosModule } from './modules/projetos/projetos.module';
+import { TarefasModule } from './modules/tarefas/tarefas.module';
 import { UsuariosModule } from './modules/usuarios/usuarios.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -23,6 +27,10 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     AuthModule,
     UsuariosModule,
+    ProjetosModule,
+    TarefasModule,
+    ChecklistsModule,
+    PainelModule,
   ],
   providers: [
     {
