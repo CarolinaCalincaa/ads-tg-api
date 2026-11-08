@@ -1,4 +1,3 @@
-import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StatusProjeto } from '@prisma/client';
 import { DomainException } from '../../common/exceptions/domain.exception';
