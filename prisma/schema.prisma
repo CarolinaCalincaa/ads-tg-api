@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProvedorOAuth {
+  LOCAL
+  GOOGLE
+  APPLE
+}
+
+enum NivelCompetencia {
+  ALTA
+  BAIXA
+}
+
+enum NivelEnergia {
+  GANHA_ENERGIA
+  PERDE_ENERGIA
+}
+
+enum QuadranteEnergia {
+  ZONA_GENIO
+  ZONA_HOBBY
+  ZONA_PERIGO
+  ZONA_NULA
+}
+
+enum StatusProjeto {
+  PLANEJADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+enum TipoItemAgenda {
+  TAREFA
+  COMPROMISSO
+}
+
+enum NivelPrioridade {
+  PRIORIDADE
+  RAPIDO
+  POSTERGAVEL
+}
+
+enum IndicadorDependencia {
+  MINHAS_ACOES
+  EM_ESPERA
+}
+
+enum StatusTarefa {
+  PENDENTE
+  CONCLUIDA
+  CANCELADA
+}
+
+enum TipoCicloFechamento {
+  SEMANAL
+  MENSAL
+}
+
+enum TipoLembrete {
+  AGUA
+  ALONGAMENTO
+  SONO
+  FECHAMENTO_SEMANAL
+}
+
+model Usuario {
+  id                  String                  @id @default(uuid()) @db.Uuid @map("id_usuario")
+  nomeCompleto        String                  @db.VarChar(150) @map("nome_completo")
+  email               String                  @unique @db.VarChar(150)
+  senhaHash           String?                 @db.VarChar(255) @map("senha_hash")
+  provedorOauth       ProvedorOAuth           @default(LOCAL) @map("provedor_oauth")
+  oauthSubjectId      String?                 @db.VarChar(255) @map("oauth_subject_id")
+  horasSonoDiarias    Int                     @default(8) @map("horas_sono_diarias")
+  onboardingConcluido Boolean                 @default(false) @map("onboarding_concluido")
+  dataCadastro        DateTime                @default(now()) @db.Timestamptz(3) @map("data_cadastro")
+  updatedAt           DateTime                @updatedAt @db.Timestamptz(3) @map("updated_at")
+
+  sessoesRefresh      SessaoRefresh[]
+  tokensReset         TokenRecuperacaoSenha[]
+  pilaresAtivosMes    PilarAtivoMes[]
+  matrizEnergia       MatrizEnergia[]
+  projetos            Projeto[]
+  tarefas             Tarefa[]
+  habitos             Habito[]
+  checklists          Checklist[]
+  fechamentos         FechamentoReflexao[]
+  lembretes           LembreteConfig[]
+
+  @@map("usuario")
+}
+
+model SessaoRefresh {
+  id        String    @id @default(uuid()) @db.Uuid @map("id_sessao_refresh")
+  idUsuario String    @db.Uuid @map("id_usuario")
+  tokenHash String    @unique @db.VarChar(64) @map("token_hash")
+  userAgent String?   @db.VarChar(255) @map("user_agent")
+  expiresAt DateTime  @db.Timestamptz(3) @map("expires_at")
+  revokedAt DateTime? @db.Timestamptz(3) @map("revoked_at")
+  createdAt DateTime  @default(now()) @db.Timestamptz(3) @map("created_at")
+
+  usuario   Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@index([idUsuario])
+  @@map("sessao_refresh")
+}
+
+model TokenRecuperacaoSenha {
+  id        String    @id @default(uuid()) @db.Uuid @map("id_token")
+  idUsuario String    @db.Uuid @map("id_usuario")
+  tokenHash String    @db.VarChar(64) @map("token_hash")
+  expiresAt DateTime  @db.Timestamptz(3) @map("expires_at")
+  usadoEm   DateTime? @db.Timestamptz(3) @map("usado_em")
+  createdAt DateTime  @default(now()) @db.Timestamptz(3) @map("created_at")
+
+  usuario   Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@index([idUsuario, expiresAt])
+  @@map("token_recuperacao_senha")
+}
+
+model PilarVida {
+  id               Int             @id @db.SmallInt @map("id_pilar")
+  codigo           String          @unique @db.VarChar(30)
+  nome             String          @unique @db.VarChar(50)
+  descricao        String?         @db.Text
+  corHex           String          @db.VarChar(7) @map("cor_hex")
+  corFundoHex      String          @db.VarChar(7) @map("cor_fundo_hex")
+  icone            String          @db.VarChar(50)
+
+  pilaresAtivosMes PilarAtivoMes[]
+  projetos         Projeto[]
+  tarefas          Tarefa[]
+  habitos          Habito[]
+
+  @@map("pilar_vida")
+}
+
+model PilarAtivoMes {
+  id        String    @id @default(uuid()) @db.Uuid @map("id_pilar_ativo")
+  idUsuario String    @db.Uuid @map("id_usuario")
+  idPilar   Int       @db.SmallInt @map("id_pilar")
+  mesAno    DateTime  @db.Date @map("mes_ano") // Sempre YYYY-MM-01
+  createdAt DateTime  @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt DateTime? @db.Timestamptz(3) @map("deleted_at")
+
+  usuario   Usuario   @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  pilar     PilarVida @relation(fields: [idPilar], references: [id], onDelete: Restrict)
+
+  @@unique([idUsuario, idPilar, mesAno], map: "uk_usuario_pilar_mes")
+  @@index([idUsuario, mesAno])
+  @@index([idUsuario, updatedAt])
+  @@map("pilar_ativo_mes")
+}
+
+model MatrizEnergia {
+  id               String           @id @default(uuid()) @db.Uuid @map("id_matriz")
+  idUsuario        String           @db.Uuid @map("id_usuario")
+  nomeAtividade    String           @db.VarChar(150) @map("nome_atividade")
+  nivelCompetencia NivelCompetencia @map("nivel_competencia")
+  nivelEnergia     NivelEnergia     @map("nivel_energia")
+  quadrante        QuadranteEnergia
+  createdAt        DateTime         @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt        DateTime         @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt        DateTime?        @db.Timestamptz(3) @map("deleted_at")
+
+  usuario          Usuario          @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@index([idUsuario, updatedAt])
+  @@map("matriz_energia")
+}
+
+model Projeto {
+  id                   String        @id @default(uuid()) @db.Uuid @map("id_projeto")
+  idUsuario            String        @db.Uuid @map("id_usuario")
+  idPilar              Int           @db.SmallInt @map("id_pilar")
+  nome                 String        @db.VarChar(150)
+  descricao            String?       @db.Text
+  dataInicio           DateTime?     @db.Date @map("data_inicio")
+  dataFimPrevista      DateTime?     @db.Date @map("data_fim_prevista")
+  horasEstimadasTotais Decimal?      @db.Decimal(6, 2) @map("horas_estimadas_totais")
+  status               StatusProjeto @default(EM_ANDAMENTO)
+  createdAt            DateTime      @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt            DateTime      @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt            DateTime?     @db.Timestamptz(3) @map("deleted_at")
+
+  usuario              Usuario       @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  pilar                PilarVida     @relation(fields: [idPilar], references: [id], onDelete: Restrict)
+  tarefas              Tarefa[]
+
+  @@index([idUsuario, status])
+  @@index([idUsuario, updatedAt])
+  @@map("projeto")
+}
+
+model Tarefa {
+  id                     String               @id @default(uuid()) @db.Uuid @map("id_tarefa")
+  idUsuario              String               @db.Uuid @map("id_usuario")
+  idPilar                Int                  @db.SmallInt @map("id_pilar")
+  idProjeto              String?              @db.Uuid @map("id_projeto")
+  tipoItem               TipoItemAgenda       @default(TAREFA) @map("tipo_item")
+  nome                   String               @db.VarChar(150)
+  descricao              String?              @db.Text
+  duracaoEstimadaMinutos Int                  @map("duracao_estimada_minutos")
+  prioridade             NivelPrioridade      @default(PRIORIDADE)
+  indicadorDependencia   IndicadorDependencia @default(MINHAS_ACOES) @map("indicador_dependencia")
+  dataAgendamento        DateTime             @db.Date @map("data_agendamento")
+  horarioInicio          String?              @db.VarChar(5) @map("horario_inicio") // 'HH:mm'
+  status                 StatusTarefa         @default(PENDENTE)
+  concluidaEm            DateTime?            @db.Timestamptz(3) @map("concluida_em")
+  createdAt              DateTime             @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt              DateTime             @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt              DateTime?            @db.Timestamptz(3) @map("deleted_at")
+
+  usuario                Usuario              @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  pilar                  PilarVida            @relation(fields: [idPilar], references: [id], onDelete: Restrict)
+  projeto                Projeto?             @relation(fields: [idProjeto], references: [id], onDelete: SetNull)
+  sessoesPomodoro        SessaoPomodoro[]
+  checklists             Checklist[]
+
+  @@index([idUsuario, dataAgendamento, deletedAt], map: "idx_tarefa_usuario_data")
+  @@index([idUsuario, updatedAt])
+  @@map("tarefa")
+}
+
+model Habito {
+  id                     String                   @id @default(uuid()) @db.Uuid @map("id_habito")
+  idUsuario              String                   @db.Uuid @map("id_usuario")
+  idPilar                Int                      @db.SmallInt @map("id_pilar")
+  nome                   String                   @db.VarChar(150)
+  descricao              String?                  @db.Text
+  duracaoEstimadaMinutos Int                      @map("duracao_estimada_minutos")
+  frequenciaSemanal      Int                      @default(7) @map("frequencia_semanal")
+  diasSemana             Json                     @default("[1,2,3,4,5,6,7]") @map("dias_semana") // 1=Seg..7=Dom
+  horarioPadrao          String?                  @db.VarChar(5) @map("horario_padrao") // 'HH:mm'
+  statusAtivo            Boolean                  @default(true) @map("status_ativo")
+  createdAt              DateTime                 @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt              DateTime                 @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt              DateTime?                @db.Timestamptz(3) @map("deleted_at")
+
+  usuario                Usuario                  @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  pilar                  PilarVida                @relation(fields: [idPilar], references: [id], onDelete: Restrict)
+  execucoes              RegistroExecucaoHabito[]
+  checklists             Checklist[]
+
+  @@index([idUsuario, statusAtivo, deletedAt])
+  @@index([idUsuario, updatedAt])
+  @@map("habito")
+}
+
+model RegistroExecucaoHabito {
+  id           String    @id @default(uuid()) @db.Uuid @map("id_registro")
+  idHabito     String    @db.Uuid @map("id_habito")
+  idUsuario    String    @db.Uuid @map("id_usuario")
+  dataExecucao DateTime  @db.Date @map("data_execucao")
+  concluido    Boolean   @default(true)
+  dataRegistro DateTime  @default(now()) @db.Timestamptz(3) @map("data_registro")
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt    DateTime? @db.Timestamptz(3) @map("deleted_at")
+
+  habito       Habito    @relation(fields: [idHabito], references: [id], onDelete: Cascade)
+
+  @@unique([idHabito, dataExecucao], map: "uk_habito_data")
+  @@index([idUsuario, dataExecucao])
+  @@index([idUsuario, updatedAt])
+  @@map("registro_execucao_habito")
+}
+
+model SessaoPomodoro {
+  id             String    @id @default(uuid()) @db.Uuid @map("id_sessao")
+  idTarefa       String    @db.Uuid @map("id_tarefa")
+  idUsuario      String    @db.Uuid @map("id_usuario")
+  duracaoMinutos Int       @default(25) @map("duracao_minutos")
+  dataInicio     DateTime  @db.Timestamptz(3) @map("data_inicio")
+  dataFim        DateTime? @db.Timestamptz(3) @map("data_fim")
+  concluido      Boolean   @default(true)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt      DateTime? @db.Timestamptz(3) @map("deleted_at")
+
+  tarefa         Tarefa    @relation(fields: [idTarefa], references: [id], onDelete: Cascade)
+
+  @@index([idUsuario, updatedAt])
+  @@map("sessao_pomodoro")
+}
+
+model Checklist {
+  id        String          @id @default(uuid()) @db.Uuid @map("id_checklist")
+  idUsuario String          @db.Uuid @map("id_usuario")
+  idTarefa  String?         @db.Uuid @map("id_tarefa")
+  idHabito  String?         @db.Uuid @map("id_habito")
+  titulo    String          @db.VarChar(100)
+  ehModelo  Boolean         @default(false) @map("eh_modelo") // True = Modelo de Processo reutilizável
+  createdAt DateTime        @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt DateTime        @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt DateTime?       @db.Timestamptz(3) @map("deleted_at")
+
+  usuario   Usuario         @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+  tarefa    Tarefa?         @relation(fields: [idTarefa], references: [id], onDelete: Cascade)
+  habito    Habito?         @relation(fields: [idHabito], references: [id], onDelete: Cascade)
+  itens     ItemChecklist[]
+
+  @@index([idUsuario, ehModelo])
+  @@index([idUsuario, updatedAt])
+  @@map("checklist")
+}
+
+model ItemChecklist {
+  id          String    @id @default(uuid()) @db.Uuid @map("id_item")
+  idChecklist String    @db.Uuid @map("id_checklist")
+  idUsuario   String    @db.Uuid @map("id_usuario")
+  descricao   String    @db.VarChar(255)
+  ordem       Int       @default(0)
+  concluido   Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt   DateTime? @db.Timestamptz(3) @map("deleted_at")
+
+  checklist   Checklist @relation(fields: [idChecklist], references: [id], onDelete: Cascade)
+
+  @@index([idChecklist, ordem])
+  @@index([idUsuario, updatedAt])
+  @@map("item_checklist")
+}
+
+model FechamentoReflexao {
+  id                 String              @id @default(uuid()) @db.Uuid @map("id_fechamento")
+  idUsuario          String              @db.Uuid @map("id_usuario")
+  tipoCiclo          TipoCicloFechamento @map("tipo_ciclo")
+  dataInicioCiclo    DateTime            @db.Date @map("data_inicio_ciclo")
+  dataFechamento     DateTime            @db.Date @map("data_fechamento")
+  acaoFuncionouBem   String?             @db.Text @map("acao_funcionou_bem")
+  oqueFazerDiferente String?             @db.Text @map("oque_fazer_diferente")
+  vitoriaReconhecer  String?             @db.Text @map("vitoria_reconhecer")
+  fracassoAceitar    String?             @db.Text @map("fracasso_aceitar")
+  dadosConsolidados  Json?               @map("dados_consolidados") // JSONB métricas + insight IA
+  createdAt          DateTime            @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt          DateTime            @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt          DateTime?           @db.Timestamptz(3) @map("deleted_at")
+
+  usuario            Usuario             @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@unique([idUsuario, tipoCiclo, dataInicioCiclo], map: "uk_usuario_ciclo_inicio")
+  @@index([idUsuario, dataFechamento])
+  @@index([idUsuario, updatedAt])
+  @@map("fechamento_reflexao")
+}
+
+model LembreteConfig {
+  id               String       @id @default(uuid()) @db.Uuid @map("id_lembrete")
+  idUsuario        String       @db.Uuid @map("id_usuario")
+  tipo             TipoLembrete
+  ativo            Boolean      @default(true)
+  intervaloMinutos Int?         @map("intervalo_minutos") // Ex: 90 para água/alongamento
+  horarioFixo      String?      @db.VarChar(5) @map("horario_fixo") // Ex: '22:00' para sono
+  janelaInicio     String       @default("08:00") @db.VarChar(5) @map("janela_inicio")
+  janelaFim        String       @default("21:00") @db.VarChar(5) @map("janela_fim")
+  createdAt        DateTime     @default(now()) @db.Timestamptz(3) @map("created_at")
+  updatedAt        DateTime     @updatedAt @db.Timestamptz(3) @map("updated_at")
+  deletedAt        DateTime?    @db.Timestamptz(3) @map("deleted_at")
+
+  usuario          Usuario      @relation(fields: [idUsuario], references: [id], onDelete: Cascade)
+
+  @@unique([idUsuario, tipo], map: "uk_usuario_tipo_lembrete")
+  @@index([idUsuario, updatedAt])
+  @@map("lembrete_config")
+}
+
+model IaCacheResposta {
+  hashEntrada      String   @id @db.VarChar(64) @map("hash_entrada")
+  tipoOperacao     String   @db.VarChar(30) @map("tipo_operacao") // ONBOARDING | INSIGHT_MENSAL
+  respostaJson     Json     @map("resposta_json")
+  tokensConsumidos Int      @default(0) @map("tokens_consumidos")
+  expiresAt        DateTime @db.Timestamptz(3) @map("expires_at")
+  createdAt        DateTime @default(now()) @db.Timestamptz(3) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("ia_cache_resposta")
+}
