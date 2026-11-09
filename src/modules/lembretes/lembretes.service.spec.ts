@@ -154,4 +154,51 @@ describe('LembretesService', () => {
       );
     });
   });
+
+  describe('atualizarConfiguracoesEmLote', () => {
+    it('deve atualizar múltiplos lembretes via payload { lembretes: [...] } e retornar lista completa', async () => {
+      prisma.lembreteConfig.upsert.mockImplementation(({ where }) => {
+        const tipo = where.idUsuario_tipo.tipo;
+        const config = mockConfigs.find((c) => c.tipo === tipo) ?? mockConfigs[0];
+        return Promise.resolve(config);
+      });
+      prisma.lembreteConfig.findMany.mockResolvedValue(mockConfigs);
+
+      const payload = {
+        lembretes: [
+          { tipo: TipoLembrete.AGUA, ativo: true, intervaloMinutos: 45 },
+          { tipo: TipoLembrete.ALONGAMENTO, ativo: false, intervaloMinutos: 90 },
+        ],
+      };
+
+      const resultado = await service.atualizarConfiguracoesEmLote(
+        idUsuario,
+        payload,
+      );
+
+      expect(prisma.lembreteConfig.upsert).toHaveBeenCalledTimes(2);
+      expect(resultado).toHaveLength(4);
+    });
+
+    it('deve atualizar múltiplos lembretes via array direto [...]', async () => {
+      prisma.lembreteConfig.upsert.mockImplementation(({ where }) => {
+        const tipo = where.idUsuario_tipo.tipo;
+        const config = mockConfigs.find((c) => c.tipo === tipo) ?? mockConfigs[0];
+        return Promise.resolve(config);
+      });
+      prisma.lembreteConfig.findMany.mockResolvedValue(mockConfigs);
+
+      const payload = [
+        { tipo: TipoLembrete.SONO, ativo: true, horarioFixo: '23:00' },
+      ];
+
+      const resultado = await service.atualizarConfiguracoesEmLote(
+        idUsuario,
+        payload,
+      );
+
+      expect(prisma.lembreteConfig.upsert).toHaveBeenCalledTimes(1);
+      expect(resultado).toHaveLength(4);
+    });
+  });
 });

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { TipoLembrete } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateLembreteDto } from './dto/update-lembretes.dto';
+import {
+  ItemLembreteBatchDto,
+  UpdateLembreteDto,
+  UpdateLembretesBatchDto,
+} from './dto/update-lembretes.dto';
 
 export interface LembreteDefaultConfig {
   ativo: boolean;
@@ -142,6 +146,27 @@ export class LembretesService {
     });
 
     return this.formatResponse(atualizado);
+  }
+
+  /**
+   * Atualiza ou cria configurações de lembrete em lote (RF21)
+   * Suporta tanto { lembretes: [...] } quanto array direto [...]
+   */
+  async atualizarConfiguracoesEmLote(
+    idUsuario: string,
+    payload: UpdateLembretesBatchDto | ItemLembreteBatchDto[],
+  ) {
+    const listaLembretes: ItemLembreteBatchDto[] = Array.isArray(payload)
+      ? payload
+      : payload?.lembretes ?? [];
+
+    for (const item of listaLembretes) {
+      if (item && item.tipo) {
+        await this.atualizarConfiguracao(idUsuario, item.tipo, item);
+      }
+    }
+
+    return this.obterConfiguracoes(idUsuario);
   }
 
   private formatResponse(config: {

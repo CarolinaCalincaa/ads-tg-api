@@ -8,6 +8,7 @@ describe('LembretesController', () => {
   let lembretesService: {
     obterConfiguracoes: jest.Mock;
     atualizarConfiguracao: jest.Mock;
+    atualizarConfiguracoesEmLote: jest.Mock;
   };
 
   const idUsuario = 'user-uuid-1';
@@ -16,6 +17,7 @@ describe('LembretesController', () => {
     lembretesService = {
       obterConfiguracoes: jest.fn(),
       atualizarConfiguracao: jest.fn(),
+      atualizarConfiguracoesEmLote: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +38,50 @@ describe('LembretesController', () => {
 
     expect(lembretesService.obterConfiguracoes).toHaveBeenCalledWith(idUsuario);
     expect(result).toHaveLength(2);
+  });
+
+  it('deve atualizar configurações em lote via PUT /lembretes com { lembretes: [...] }', async () => {
+    const payload = {
+      lembretes: [
+        { tipo: TipoLembrete.AGUA, ativo: true, intervaloMinutos: 45 },
+        { tipo: TipoLembrete.ALONGAMENTO, ativo: false },
+      ],
+    };
+    lembretesService.atualizarConfiguracoesEmLote.mockResolvedValue([
+      { tipo: TipoLembrete.AGUA, ativo: true, intervaloMinutos: 45 },
+      { tipo: TipoLembrete.ALONGAMENTO, ativo: false },
+    ]);
+
+    const result = await controller.atualizarConfiguracoesEmLote(
+      idUsuario,
+      payload,
+    );
+
+    expect(lembretesService.atualizarConfiguracoesEmLote).toHaveBeenCalledWith(
+      idUsuario,
+      payload,
+    );
+    expect(result).toHaveLength(2);
+  });
+
+  it('deve atualizar configurações em lote via PUT /lembretes com array direto', async () => {
+    const payload = [
+      { tipo: TipoLembrete.AGUA, ativo: true, intervaloMinutos: 60 },
+    ];
+    lembretesService.atualizarConfiguracoesEmLote.mockResolvedValue([
+      { tipo: TipoLembrete.AGUA, ativo: true, intervaloMinutos: 60 },
+    ]);
+
+    const result = await controller.atualizarConfiguracoesEmLote(
+      idUsuario,
+      payload,
+    );
+
+    expect(lembretesService.atualizarConfiguracoesEmLote).toHaveBeenCalledWith(
+      idUsuario,
+      payload,
+    );
+    expect(result).toHaveLength(1);
   });
 
   it('deve atualizar configuração via PUT /lembretes/:tipo', async () => {

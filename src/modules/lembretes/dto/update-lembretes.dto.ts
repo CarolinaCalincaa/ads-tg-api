@@ -1,12 +1,18 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TipoLembrete } from '@prisma/client';
+import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
+  IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
   Max,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
 export class UpdateLembreteDto {
@@ -19,7 +25,8 @@ export class UpdateLembreteDto {
   ativo?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Intervalo periódico em minutos para alertas de repetição (ex: 90 para água)',
+    description:
+      'Intervalo periódico em minutos para alertas de repetição (ex: 90 para água)',
     example: 90,
   })
   @IsOptional()
@@ -29,7 +36,8 @@ export class UpdateLembreteDto {
   intervaloMinutos?: number | null;
 
   @ApiPropertyOptional({
-    description: 'Horário fixo diário no formato HH:mm (ex: 22:00 para ritual de sono)',
+    description:
+      'Horário fixo diário no formato HH:mm (ex: 22:00 para ritual de sono)',
     example: '22:00',
   })
   @IsOptional()
@@ -40,7 +48,8 @@ export class UpdateLembreteDto {
   horarioFixo?: string | null;
 
   @ApiPropertyOptional({
-    description: 'Início da janela de horário diária permitida no formato HH:mm',
+    description:
+      'Início da janela de horário diária permitida no formato HH:mm',
     example: '08:00',
     default: '08:00',
   })
@@ -62,4 +71,28 @@ export class UpdateLembreteDto {
     message: 'janelaFim deve estar no formato HH:mm (ex: 21:00)',
   })
   janelaFim?: string;
+}
+
+export class ItemLembreteBatchDto extends UpdateLembreteDto {
+  @ApiProperty({
+    enum: TipoLembrete,
+    description: 'Tipo de lembrete a ser configurado',
+    example: TipoLembrete.AGUA,
+  })
+  @IsEnum(TipoLembrete, {
+    message: 'tipo deve ser AGUA, ALONGAMENTO, SONO ou FECHAMENTO_SEMANAL.',
+  })
+  @IsNotEmpty()
+  tipo: TipoLembrete;
+}
+
+export class UpdateLembretesBatchDto {
+  @ApiProperty({
+    type: [ItemLembreteBatchDto],
+    description: 'Lista de configurações de lembretes para atualização em lote',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ItemLembreteBatchDto)
+  lembretes: ItemLembreteBatchDto[];
 }
