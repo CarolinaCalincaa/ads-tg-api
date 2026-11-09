@@ -3,6 +3,7 @@ import { IndicadorDependencia, StatusTarefa } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FadigaMentalService } from './fadiga-mental.service';
 import { TarefasService } from '../tarefas/tarefas.service';
+import { StreakCalculator, toCivilDateString } from '../habitos/streak.calculator';
 
 @Injectable()
 export class PainelService {
@@ -131,7 +132,7 @@ export class PainelService {
       include: {
         pilar: true,
         execucoes: {
-          where: { dataExecucao: dataObj, deletedAt: null },
+          where: { deletedAt: null },
         },
         checklists: {
           where: { deletedAt: null },
@@ -152,8 +153,28 @@ export class PainelService {
     });
 
     const itensLinhaTempoHabitos = habitosDoDia.map((h) => {
-      const reg = h.execucoes[0];
+      const reg =
+        h.execucoes?.find(
+          (e) => e.dataExecucao && toCivilDateString(e.dataExecucao) === data,
+        ) ?? h.execucoes?.[0];
       const concluido = reg ? reg.concluido : false;
+
+      const datasConcluidas =
+        h.execucoes
+          ?.filter((e) => e.concluido && e.dataExecucao)
+          .map((e) => e.dataExecucao) ?? [];
+
+      const diasSemanaProgramados =
+        (Array.isArray(h.diasSemana) ? (h.diasSemana as number[]) : null) ?? [
+          1, 2, 3, 4, 5, 6, 7,
+        ];
+
+      const streakCalculado = StreakCalculator.calcularStreakHabito(
+        diasSemanaProgramados,
+        datasConcluidas,
+        data,
+      );
+      const streakAtual = (h as { streakAtual?: number }).streakAtual ?? streakCalculado;
 
       return {
         id: h.id,
@@ -168,7 +189,7 @@ export class PainelService {
         status: concluido ? StatusTarefa.CONCLUIDA : StatusTarefa.PENDENTE,
         concluido,
         concluidaEm: reg?.dataRegistro ?? null,
-        streakAtual: 0,
+        streakAtual,
         pomodorosConcluidos: 0,
         pilar: {
           idPilar: h.pilar.id,

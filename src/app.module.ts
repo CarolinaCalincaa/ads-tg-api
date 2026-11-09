@@ -5,8 +5,11 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { ChecklistsModule } from './modules/checklists/checklists.module';
+import { HabitosModule } from './modules/habitos/habitos.module';
 import { HealthModule } from './modules/health/health.module';
+import { LembretesModule } from './modules/lembretes/lembretes.module';
 import { PainelModule } from './modules/painel/painel.module';
+import { PilaresModule } from './modules/pilares/pilares.module';
 import { PomodoroModule } from './modules/pomodoro/pomodoro.module';
 import { ProjetosModule } from './modules/projetos/projetos.module';
 import { TarefasModule } from './modules/tarefas/tarefas.module';
@@ -28,11 +31,14 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     AuthModule,
     UsuariosModule,
+    PilaresModule,
     ProjetosModule,
     TarefasModule,
+    HabitosModule,
     ChecklistsModule,
     PainelModule,
     PomodoroModule,
+    LembretesModule,
   ],
   providers: [
     {
