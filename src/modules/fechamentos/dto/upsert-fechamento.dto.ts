@@ -29,8 +29,36 @@ export class UpsertFechamentoDto {
     { strict: true },
     { message: 'dataInicioCiclo deve ser uma data válida no formato YYYY-MM-DD.' },
   )
-  @IsNotEmpty()
-  dataInicioCiclo: string;
+  @IsOptional()
+  dataInicioCiclo?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Alias de compatibilidade para dataInicioCiclo (YYYY-MM-DD).',
+    example: '2026-10-06',
+  })
+  @IsISO8601(
+    { strict: true },
+    { message: 'dataInicio deve ser uma data válida no formato YYYY-MM-DD.' },
+  )
+  @IsOptional()
+  dataInicio?: string;
+
+  @ApiPropertyOptional({
+    description: 'Data civil de fim do ciclo (YYYY-MM-DD).',
+    example: '2026-10-12',
+  })
+  @IsString()
+  @IsOptional()
+  dataFim?: string;
+
+  @ApiPropertyOptional({
+    description: 'Rótulo legível do período do ciclo.',
+    example: '06 — 12 de outubro',
+  })
+  @IsString()
+  @IsOptional()
+  rotuloPeriodo?: string;
 
   @ApiPropertyOptional({
     description:

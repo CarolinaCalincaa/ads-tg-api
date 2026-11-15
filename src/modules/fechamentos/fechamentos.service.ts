@@ -18,12 +18,28 @@ export interface PreviaFechamentoResponse {
   dataRef: string;
   dataInicioCiclo: string;
   dataFimCiclo: string;
+  dataInicio: string;
+  dataFim: string;
+  rotuloPeriodo: string;
   totalDiasCiclo: number;
   habitosConcluidos: number;
   habitosEsperados: number;
   consistenciaPercentual: number;
   diasAtivos: number;
   sequenciaAtualDias: number;
+  metricas: {
+    consistenciaPercentual: number;
+    habitosConcluidos: number;
+    habitosEsperados: number;
+    diasAtivos: number;
+    totalDiasCiclo: number;
+    sequenciaAtualDias: number;
+  };
+  acaoFuncionouBem: string | null;
+  oqueFazerDiferente: string | null;
+  vitoriaReconhecer: string | null;
+  fracassoAceitar: string | null;
+  fechamentoExistenteId: string | null;
   fechamentoSalvo: {
     id: string;
     acaoFuncionouBem: string | null;
@@ -36,9 +52,50 @@ export interface PreviaFechamentoResponse {
   } | null;
 }
 
+const NOMES_MESES = [
+  'janeiro',
+  'fevereiro',
+  'março',
+  'abril',
+  'maio',
+  'junho',
+  'julho',
+  'agosto',
+  'setembro',
+  'outubro',
+  'novembro',
+  'dezembro',
+];
+
 @Injectable()
 export class FechamentosService {
   constructor(private readonly prisma: PrismaService) {}
+
+  formatarRotuloPeriodo(
+    tipoCiclo: TipoCicloFechamento,
+    dataInicioStr: string,
+    dataFimStr: string,
+  ): string {
+    const ano = Number(dataInicioStr.slice(0, 4));
+    const mesInicio = Number(dataInicioStr.slice(5, 7));
+    const diaInicio = dataInicioStr.slice(8, 10);
+
+    const mesFim = Number(dataFimStr.slice(5, 7));
+    const diaFim = dataFimStr.slice(8, 10);
+
+    if (tipoCiclo === TipoCicloFechamento.MENSAL) {
+      const nomeMes = NOMES_MESES[mesInicio - 1] ?? '';
+      const capitalizado = nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1);
+      return `${capitalizado} / ${ano}`;
+    }
+
+    const nomeMesFim = NOMES_MESES[mesFim - 1] ?? '';
+    if (mesInicio === mesFim) {
+      return `${diaInicio} — ${diaFim} de ${nomeMesFim}`;
+    }
+    const nomeMesInicio = NOMES_MESES[mesInicio - 1] ?? '';
+    return `${diaInicio} de ${nomeMesInicio} — ${diaFim} de ${nomeMesFim}`;
+  }
 
   /**
    * Determina o intervalo do ciclo civil a partir da data de referência:
@@ -243,17 +300,39 @@ export class FechamentosService {
       },
     });
 
+    const rotuloPeriodo = this.formatarRotuloPeriodo(
+      tipoCiclo,
+      dataInicio,
+      dataFim,
+    );
+
     return {
       tipoCiclo,
       dataRef,
       dataInicioCiclo: dataInicio,
       dataFimCiclo: dataFim,
+      dataInicio,
+      dataFim,
+      rotuloPeriodo,
       totalDiasCiclo,
       habitosConcluidos,
       habitosEsperados,
       consistenciaPercentual,
       diasAtivos,
       sequenciaAtualDias,
+      metricas: {
+        consistenciaPercentual,
+        habitosConcluidos,
+        habitosEsperados,
+        diasAtivos,
+        totalDiasCiclo,
+        sequenciaAtualDias,
+      },
+      acaoFuncionouBem: fechamentoExistente?.acaoFuncionouBem ?? null,
+      oqueFazerDiferente: fechamentoExistente?.oqueFazerDiferente ?? null,
+      vitoriaReconhecer: fechamentoExistente?.vitoriaReconhecer ?? null,
+      fracassoAceitar: fechamentoExistente?.fracassoAceitar ?? null,
+      fechamentoExistenteId: fechamentoExistente?.id ?? null,
       fechamentoSalvo: fechamentoExistente
         ? {
             id: fechamentoExistente.id,
@@ -274,7 +353,17 @@ export class FechamentosService {
    * Realiza o Upsert sobre a chave única (idUsuario, tipoCiclo, dataInicioCiclo)
    */
   async upsert(idUsuario: string, dto: UpsertFechamentoDto) {
-    const dataInicioCivil = toCivilDateString(dto.dataInicioCiclo);
+    const rawDataInicio = dto.dataInicioCiclo ?? dto.dataInicio;
+    if (!rawDataInicio) {
+      throw new DomainException(
+        {
+          errorCode: 'VALIDATION_ERROR',
+          message: 'dataInicioCiclo ou dataInicio deve ser informada.',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const dataInicioCivil = toCivilDateString(rawDataInicio);
     const dataInicioDate = new Date(`${dataInicioCivil}T00:00:00.000Z`);
 
     const dataFechamentoCivil = dto.dataFechamento
@@ -402,11 +491,25 @@ export class FechamentosService {
     createdAt: Date;
     updatedAt: Date;
   }) {
+    const dataInicioCiclo = toCivilDateString(fechamento.dataInicioCiclo);
+    const periodo = this.calcularPeriodoCiclo(
+      fechamento.tipoCiclo,
+      dataInicioCiclo,
+    );
+    const rotuloPeriodo = this.formatarRotuloPeriodo(
+      fechamento.tipoCiclo,
+      periodo.dataInicio,
+      periodo.dataFim,
+    );
+
     return {
       id: fechamento.id,
       idUsuario: fechamento.idUsuario,
       tipoCiclo: fechamento.tipoCiclo,
-      dataInicioCiclo: toCivilDateString(fechamento.dataInicioCiclo),
+      dataInicioCiclo,
+      dataInicio: periodo.dataInicio,
+      dataFim: periodo.dataFim,
+      rotuloPeriodo,
       dataFechamento: toCivilDateString(fechamento.dataFechamento),
       acaoFuncionouBem: fechamento.acaoFuncionouBem,
       oqueFazerDiferente: fechamento.oqueFazerDiferente,
