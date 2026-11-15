@@ -91,7 +91,6 @@ export class FadigaMentalService {
         idUsuario,
         deletedAt: null,
         statusAtivo: true,
-        createdAt: { lte: new Date(`${dataStr}T23:59:59.999Z`) },
       },
       select: { duracaoEstimadaMinutos: true, diasSemana: true },
     });

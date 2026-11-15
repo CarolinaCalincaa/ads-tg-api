@@ -93,7 +93,7 @@ describe('PainelService', () => {
         duracaoEstimadaMinutos: 5,
         streakAtual: 3,
         pilar: { id: 1, codigo: 'SAUDE', nome: 'Saúde', corHex: '#22C55E', corFundoHex: '#F0FDF4', icone: 'heart' },
-        execucoes: [{ concluido: true, dataRegistro: new Date() }],
+        execucoes: [{ dataExecucao: new Date('2026-10-15T00:00:00.000Z'), concluido: true, dataRegistro: new Date() }],
         checklists: [],
       },
     ]);

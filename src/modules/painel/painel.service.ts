@@ -126,8 +126,6 @@ export class PainelService {
         idUsuario,
         deletedAt: null,
         statusAtivo: true,
-        
-        createdAt: { lte: new Date(`${data}T23:59:59.999Z`) },
       },
       include: {
         pilar: true,
@@ -153,10 +151,9 @@ export class PainelService {
     });
 
     const itensLinhaTempoHabitos = habitosDoDia.map((h) => {
-      const reg =
-        h.execucoes?.find(
-          (e) => e.dataExecucao && toCivilDateString(e.dataExecucao) === data,
-        ) ?? h.execucoes?.[0];
+      const reg = h.execucoes?.find(
+        (e) => e.dataExecucao && toCivilDateString(e.dataExecucao) === data,
+      );
       const concluido = reg ? reg.concluido : false;
 
       const datasConcluidas =
@@ -190,6 +187,7 @@ export class PainelService {
         concluido,
         concluidaEm: reg?.dataRegistro ?? null,
         streakAtual,
+        diasSemana: diasSemanaProgramados,
         pomodorosConcluidos: 0,
         pilar: {
           idPilar: h.pilar.id,
@@ -298,7 +296,6 @@ export class PainelService {
           idUsuario,
           deletedAt: null,
           statusAtivo: true,
-          createdAt: { lte: new Date(`${dayStr}T23:59:59.999Z`) },
         },
         select: { diasSemana: true },
       });

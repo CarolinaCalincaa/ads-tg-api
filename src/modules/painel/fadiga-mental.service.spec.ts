@@ -161,7 +161,6 @@ describe('FadigaMentalService (RN02)', () => {
           idUsuario: 'user-1',
           deletedAt: null,
           statusAtivo: true,
-          createdAt: { lte: expect.any(Date) },
         },
         select: { duracaoEstimadaMinutos: true, diasSemana: true },
       });
