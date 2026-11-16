@@ -58,13 +58,13 @@ export class PasswordResetService {
 
     const from =
       this.configService.get<string>('SMTP_FROM') ??
-      'Produtividade Pessoal <no-reply@produtividade.local>';
+      'Eixo <no-reply@produtividade.local>';
 
     try {
       await this.transporter.sendMail({
         from,
         to: usuario.email,
-        subject: 'Código de Recuperação de Senha — Gestão de Produtividade',
+        subject: 'Código de Recuperação de Senha — Eixo',
         text: `Olá, ${usuario.nomeCompleto}!\n\nSeu código de recuperação de senha é: ${codigo}\nEste código expira em 15 minutos.\n\nCaso não tenha solicitado, ignore este e-mail.`,
         html: `<p>Olá, <strong>${usuario.nomeCompleto}</strong>!</p><p>Seu código de recuperação de senha é: <strong style="font-size:18px;letter-spacing:2px;">${codigo}</strong></p><p>Este código é válido por <strong>15 minutos</strong>.</p>`,
       });
